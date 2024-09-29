@@ -1,9 +1,9 @@
+from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 
 from taxi.models import Driver, Car
-from django import forms
 
 
 class DriverCreationForm(UserCreationForm):
@@ -28,12 +28,13 @@ class DriverLicenseUpdateForm(forms.ModelForm):
         first_char = license_num[:3]
         last_char = license_num[3:]
 
-        if (len(license_num) != DriverLicenseUpdateForm.length
-                or first_char.upper() != first_char
-                or not first_char.isalpha()
-                or not last_char.isnumeric()):
-            raise ValidationError("Data is not correct")
-        return license_num
+        if (len(license_num) == DriverLicenseUpdateForm.length
+                and first_char.isupper()
+                and first_char.isalpha()
+                and last_char.isnumeric()):
+            return license_num
+
+        raise ValidationError("Data is not correct")
 
 
 class CarForm(forms.ModelForm):

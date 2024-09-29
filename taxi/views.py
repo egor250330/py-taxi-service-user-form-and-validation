@@ -1,5 +1,4 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import generic
@@ -63,13 +62,15 @@ class CarListView(LoginRequiredMixin, generic.ListView):
 class CarDetailView(LoginRequiredMixin, generic.DetailView):
     model = Car
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('drivers')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         car = self.object
         user = self.request.user
 
-        if isinstance(user, Driver):
-            context["is_driver"] = car.drivers.filter(pk=user.id).exists()
+        context["is_driver"] = car.drivers.filter(pk=user.id).exists()
         return context
 
 
@@ -78,10 +79,8 @@ class CarAssignView(LoginRequiredMixin, generic.UpdateView):
         car = get_object_or_404(Car, pk=kwargs["pk"])
         user = self.request.user
 
-        if isinstance(user, Driver):
-            car.drivers.add(user)
-            return redirect("taxi:car-detail", pk=car.id)
-        return HttpResponseForbidden("Only drivers can do it")
+        car.drivers.add(user)
+        return redirect("taxi:car-detail", pk=car.id)
 
 
 class CarResignView(LoginRequiredMixin, generic.UpdateView):
@@ -89,10 +88,8 @@ class CarResignView(LoginRequiredMixin, generic.UpdateView):
         car = get_object_or_404(Car, pk=kwargs["pk"])
         user = self.request.user
 
-        if isinstance(user, Driver):
-            car.drivers.remove(user)
-            return redirect("taxi:car-detail", pk=car.id)
-        return HttpResponseForbidden("Only drivers can do it")
+        car.drivers.remove(user)
+        return redirect("taxi:car-detail", pk=car.id)
 
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
